@@ -1,0 +1,16 @@
+{
+	refreshTimeInSeconds:30,
+	verbose:false,
+	templates:
+		[
+			{
+				name:"Default",
+				path:"/jsps/template/default.jsp",
+				refreshInSeconds:600,
+				filter:{
+					include:["/**"],
+					exclude:["*.js","*.css","*.zip","*.dwr"]
+					}
+			} 
+		]
+}

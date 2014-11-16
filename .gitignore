@@ -1,0 +1,38 @@
+#ignorar arquivos e diretórios:
+
+#build files
+system/build/*
+system/.*
+
+#temporary files
+system/tomcat*
+ 
+# Compiled source #
+###################
+classes
+*.class
+*.dll
+*.exe 
+bin
+lib
+*.db
+.svn
+*.scc
+dist/*.jar
+ 
+# Logs#
+######################
+*.log
+log.txt
+log
+ 
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

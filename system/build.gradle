@@ -1,0 +1,175 @@
+//use command "gradle build" to build-in
+//use command "gradle eclipse"to build eclipse files
+//use command "gradle -1 taskname" to run a especific task 
+
+apply plugin : 'java'
+apply plugin: 'eclipse-wtp'
+apply plugin: 'download-task' //adiciona o comando download
+
+  
+targetCompatibility=1.7
+sourceCompatibility=1.7
+ 
+ 
+ 
+//PROPERTIES
+version = '1.0'
+//version = '1.0-SNAPSHOT'
+group = 'taulukko-commons'
+jar.baseName =  group + '-inject-template' 
+
+ 
+eclipse 
+{
+	project 
+	{
+		name = jar.baseName
+		comment = 'Taulukko Commons Inject Template'
+   }
+}
+
+buildscript {
+	
+	
+ 	//EXT PROPERTIES
+	ext {
+		taulukkoRootPath =  System.properties['user.home'] 
+    	//taulukkoRootPath = '../../../'
+    	localRepoPath = taulukkoRootPath + "/.local-repo"
+	}
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+		//adiciona task download e comando download como dependencia do script
+        classpath 'de.undercouch:gradle-download-task:1.0' 
+    }
+}
+
+defaultTasks 'help'
+ 
+
+task help << {
+	println 'gradle <task> '
+	println 'task: <eclipse>  | <build> | <updateRemote> '
+	println 'eclipse: create eclipse project files'
+	println 'build: compile project '
+	println 'updateRemote: download remote references to local repository'
+	println 'cleanLocal: delete local repository'
+}
+
+task cleanLocal << {  
+	println 'Cleanup local repository'
+
+	def localRepo = new File(localRepoPath)
+	
+	localRepo.deleteDir() 
+	
+	
+}
+
+task createLocalRepo << {
+	def localRepo = new File(localRepoPath)
+	if(!localRepo.exists())
+	{
+		tasks.updateRemote.execute()
+	}	
+	copy{
+	 	into localRepoPath  
+    	from "$buildDir/libs" 
+	}
+}
+
+task updateRemote << {
+		tasks.cleanLocal.execute()
+    	tasks.downloadRemote.execute()
+    	tasks.unzipRemoteRepo.execute()
+    	tasks.deleteRemoteZipFile.execute()
+}
+
+
+task downloadRemote << {
+		println 'Download remote dependencies to ' + taulukkoRootPath
+		download {
+	        src 'http://www.evon.com.br/remoterepo/remote-repo.zip'
+    	    dest taulukkoRootPath
+    	}
+}
+ 
+task unzipRemoteRepo<<  {
+
+
+
+	println 'Unpack remote dependencies to ' + localRepoPath
+
+	copy{
+   		from(zipTree("$taulukkoRootPath/remote-repo.zip"))
+   		into(taulukkoRootPath)
+	}
+}
+ 
+task deleteRemoteZipFile(type: Delete) {
+   delete "$taulukkoRootPath/remote-repo.zip"
+}
+ 
+
+
+build.dependsOn createLocalRepo
+
+repositories {
+  mavenCentral()
+  flatDir dirs : [localRepoPath]
+}
+
+dependencies
+{ 
+	
+	//teste
+	//compile 'taulukko.commons:taulukko-commons-lang:2.3.2@jar'
+
+
+	/*TAULUKKO COMMON PARSERS*/
+
+
+	
+	/*TAULUKKO COMMON UTIL*/
+	compile 'taulukko.commons:taulukko-commons-util:1.0@jar'
+	compile 'taulukko.commons:taulukko-commons-parsers:1.0@jar'
+
+	//google
+	compile 'com.google.code.gson:gson:2.+'
+
+	//apache
+	compile 'commons-codec:commons-codec:1.+'
+	compile 'commons-collections:commons-collections:3.2.+'
+	compile 'commons-dbcp:commons-dbcp:1.+'
+	compile 'commons-dbutils:commons-dbutils:1.+'
+	compile 'commons-discovery:commons-discovery:0.+'
+	compile 'org.apache.commons:commons-email:1.+'
+	compile 'commons-fileupload:commons-fileupload:1.2.+'
+	compile 'commons-io:commons-io:2.+'
+	compile 'commons-lang:commons-lang:2.+'
+	compile 'commons-logging:commons-logging:1.1.+'
+	compile 'commons-net:commons-net:1.4.+'
+	compile 'commons-pool:commons-pool:1.+'
+	compile 'org.apache.httpcomponents:fluent-hc:4.2.+'
+	compile 'org.apache.httpcomponents:httpclient:4.2.+'
+	compile 'org.apache.httpcomponents:httpclient-cache:4.2.+'
+	compile 'org.apache.httpcomponents:httpcore:4.2.+'
+	compile 'org.apache.httpcomponents:httpmime:4.2.+'
+	compile 'log4j:log4j:1.2.+'
+
+
+
+	//junit
+	compile "junit:junit:+"
+	
+	//jsoup
+	compile 'org.jsoup:jsoup:1.7.+'
+	
+	//j2ee
+	compile 'javax.servlet:jsp-api:2.+'
+	compile 'javax.servlet:javax.servlet-api:3.1.+'
+	
+
+}
