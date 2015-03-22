@@ -27,19 +27,18 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.fluent.Request;
 
-import com.evon.htmlparser.HTMLParser;
-import com.evon.htmlparser.IDocument;
-import com.evon.htmlparser.IElement;
-import com.evon.htmlparser.IElements;
 import com.evon.injectTemplate.config.InjectUtils;
 import com.evon.injectTemplate.config.TemplateBean;
 import com.evon.injectTemplate.config.TemplateConfig;
+import com.taulukko.commons.parsers.htmlparser.HTMLParser;
+import com.taulukko.commons.parsers.htmlparser.IDocument;
+import com.taulukko.commons.parsers.htmlparser.IElement;
+import com.taulukko.commons.parsers.htmlparser.IElements;
 
 public class InjectTemplateFilter implements Filter {
 	private static Map<String, String> contentTypes = null;
@@ -95,21 +94,6 @@ public class InjectTemplateFilter implements Filter {
 		}
 	}
 
-	private String getCookieHashs(HttpServletRequest httpRequest) {
-		Cookie cookies[] = httpRequest.getCookies();
-		if (cookies == null) {
-			return "";
-		}
-		StringBuffer ret = new StringBuffer();
-		for (Cookie cookie : cookies) {
-			ret.append(cookie.getName().hashCode());
-			ret.append(";");
-			ret.append(cookie.getValue().hashCode());
-			ret.append(";");
-		}
-		return ret.toString();
-	}
-
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
@@ -138,7 +122,8 @@ public class InjectTemplateFilter implements Filter {
 
 		boolean requestedURIIsTheTemplate = false;
 
-		requestedURIIsTheTemplate = InjectUtils.isTemplate(uri);
+		requestedURIIsTheTemplate = InjectUtils.isTemplate(request
+				.getServletContext().getContextPath(), uri);
 
 		boolean contentTypeIsText = !wrapper.isBinary() && contentType != null
 				&& !contentType.equals("none");
@@ -164,14 +149,13 @@ public class InjectTemplateFilter implements Filter {
 		String key = null;
 
 		if (template.cache.equals("SESSION")) {
-			String cookiesNames = getCookieHashs(httpRequest);
-			key = template.path + cookiesNames;
-		} else if (template.cache.equals("ON"))
-
-		{
+			key = buildKey(template, httpRequest);
+		} else if (template.cache.equals("ON")) {
 			key = template.path;
 
 		}
+
+		System.out.println(key);
 
 		if (!templates.containsKey("/" + template.path)) {
 			throw new ServletException("Template [" + template.path
@@ -184,24 +168,20 @@ public class InjectTemplateFilter implements Filter {
 		boolean replaceTemplate = template.cache.equals("OFF")
 				|| !htmlContents.containsKey(key) || needRefresh;
 
+		/*
+		 * pra investigar erro de nulo, boolean notExist = key==null ||
+		 * !htmlContents.containsKey(key); if(!notExist) { notExist=!notExist;
+		 * //throw new ServletException("content not exist"); }
+		 */
 
-				
-/*	pra investigar erro de nulo, 	
-		boolean notExist = key==null || !htmlContents.containsKey(key);
- * if(!notExist)
-		{
-			notExist=!notExist;
-			//throw new ServletException("content not exist");
-		}
-	*/
-		
 		if (replaceTemplate) {
 			if (needRefresh) {
 				template.lastUpdate = System.currentTimeMillis();
 			}
 
 			try {
-				loadContentTemplate(template, request.getServerName(),
+				loadContentTemplate(template, request.getServerName(), request
+						.getServletContext().getContextPath(),
 						request.getServerPort(), request.getProtocol()
 								.contains("HTTPS"), httpRequest);
 			} catch (Exception e) {
@@ -211,7 +191,6 @@ public class InjectTemplateFilter implements Filter {
 
 		HTMLInfoBean templateHTML = templates.get("/" + template.path);
 
-		
 		String contentTemplate = htmlContents.get(key).getContent();
 		IDocument docOut = HTMLParser.parse(out);
 
@@ -306,17 +285,21 @@ public class InjectTemplateFilter implements Filter {
 	}
 
 	private void loadContentTemplate(TemplateBean template, String domain,
-			Integer port, boolean https, HttpServletRequest httpRequest)
-			throws Exception {
+			String contextName, Integer port, boolean https,
+			HttpServletRequest httpRequest) throws IOException {
 		HTMLInfoBean htmlInfo = templates.get("/" + template.path);
 
 		String sport = (port == null) ? "" : ":" + String.valueOf(port);
 
-		String url = htmlInfo.getProtocol() + "://" + domain + sport + "/"
-				+ template.path;
+		if (contextName.equals("/")) {
+			contextName = "";
+		}
+
+		String url = htmlInfo.getProtocol() + "://" + domain + sport
+				+ contextName + "/" + template.path;
 
 		Request request = Request.Get(url);
-
+		
 		Enumeration<String> headerNames = httpRequest.getHeaderNames();
 
 		while (headerNames.hasMoreElements()) {
@@ -325,11 +308,20 @@ public class InjectTemplateFilter implements Filter {
 			Enumeration<String> headerValues = httpRequest.getHeaders(name);
 			while (headerValues.hasMoreElements()) {
 				String value = headerValues.nextElement();
+				System.out.println("Add " + name + " = " + value);
 				request = request.addHeader(name, value);
 			}
 		}
 
-		String content = request.execute().returnContent().asString();
+		String content;
+		try {
+			content = request.execute().returnContent().asString();
+		} catch (IOException e) {
+			if (e.getMessage() != null && e.getMessage().equals("Not Found")) {
+				throw new IOException("Template [" + url + "] not found!", e);
+			}
+			throw e;
+		}
 
 		Pattern pattern = Pattern.compile(
 				"<INJECT[ ]{1,}selector=[\"'](.*?)[\"']/>",
@@ -350,8 +342,7 @@ public class InjectTemplateFilter implements Filter {
 		String key = null;
 
 		if (template.cache.equals("SESSION")) {
-			String cookiesNames = getCookieHashs(httpRequest);
-			key = template.path + cookiesNames;
+			key = buildKey(template, httpRequest);
 		} else {
 			key = template.path;
 		}
@@ -362,6 +353,11 @@ public class InjectTemplateFilter implements Filter {
 		htmlContents.remove(key);
 		htmlContents.put(key, contentBean);
 		htmlInfo.setSelectors(selectors);
+	}
+
+	private String buildKey(TemplateBean template,
+			HttpServletRequest httpRequest) {
+		return template.path + "&injectid=" + httpRequest.getSession().getId();
 	}
 
 	private void loadHTMLInfo(TemplateBean template, String domain,

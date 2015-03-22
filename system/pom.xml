@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>Taulukko Commons Inject Template Framework</name>
+	<description>Framework to create templates to web pages</description>
+	<url>https://github.com/Taulukko/taulukko-commons-inject-template</url>
+
+	<groupId>com.taulukko.commons</groupId>
+	<artifactId>taulukko-commons-inject-template</artifactId>
+	<packaging>jar</packaging>
+	<version>1.0.1</version>
+	<!-- -SNAPSHOT -->	
+  
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<junit.version>4.11</junit.version>
+		<jdk.version>1.7</jdk.version>
+		<servlet.version>2.5</servlet.version>
+		 <tomcat.version>8.0.20</tomcat.version>
+	</properties>
+	  
+		 <!-- [ means closet, inclusive. ) means open, excluisive. Eg. [1.0.0,2.0.0) means 1.0.0 - >  2.0.0 (except 2.0.0)-->	
+	<dependencies>
+ 
+		<dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>
+	      <version>${junit.version}</version>
+	      <scope>test</scope>
+	    </dependency>
+	    
+
+		
+		<!-- for integration test propouses -->
+		<dependency>
+	        <groupId>org.apache.tomcat.embed</groupId>
+	        <artifactId>tomcat-embed-core</artifactId>
+	        <version>${tomcat.version}</version>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.apache.tomcat.embed</groupId>
+	        <artifactId>tomcat-embed-logging-juli</artifactId>
+	        <version>${tomcat.version}</version>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.apache.tomcat.embed</groupId>
+	        <artifactId>tomcat-embed-jasper</artifactId>
+	        <version>${tomcat.version}</version>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.apache.tomcat</groupId>
+	        <artifactId>tomcat-jasper</artifactId>
+	        <version>${tomcat.version}</version>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.apache.tomcat</groupId>
+	        <artifactId>tomcat-jasper-el</artifactId>
+	        <version>${tomcat.version}</version>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.apache.tomcat</groupId>
+	        <artifactId>tomcat-jsp-api</artifactId>
+	        <version>${tomcat.version}</version>
+	        <scope>test</scope>
+	    </dependency>
+		
+		<dependency>
+			<groupId>com.sun.faces</groupId>
+			<artifactId>jsf-impl</artifactId>
+			<version>2.2.10</version> 
+			<scope>test</scope>
+		</dependency>
+				
+		<dependency>
+		  <groupId>com.sun.faces</groupId>
+		  <artifactId>jsf-api</artifactId>
+		  <version>2.1.13</version>
+		  <scope>test</scope>
+		</dependency>
+		 
+		<dependency>
+		  <groupId>javax.servlet</groupId>
+		  <artifactId>javax.servlet-api</artifactId>
+		  <version>3.0.1</version>
+		  <scope>test</scope>
+		</dependency>
+
+				
+		<!--compilation-->
+
+		<dependency>
+			<groupId>com.taulukko.commons</groupId>
+			<artifactId>taulukko-commons-parsers</artifactId>
+			<version>1.0.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.4</version>
+		</dependency>
+
+	    <dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore</artifactId>
+			<version>4.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>fluent-hc</artifactId>
+			<version>4.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax</groupId>
+			<artifactId>javaee-web-api</artifactId>
+			<version>6.0</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.0</version>
+				<configuration>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.4</version> 
+			</plugin>
+			 <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.18.1</version>
+				<configuration>
+					<excludes>
+						<exclude>write/**/*Test.java</exclude>
+					</excludes>
+					<includes>
+						<include>integration/**/*Test.java</include>
+						<include>**/taulukko/**/*Test.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+		</plugins>
+
+	</build>
+	
+	<profiles>		 
+		<profile>
+			<id>production</id>
+			<activation>
+				<property>
+			      <name>profile</name>
+			      <value>production</value>
+		      	</property>
+	      	</activation>
+			<build>
+				<plugins>
+				 <plugin>
+				      <artifactId>maven-antrun-plugin</artifactId>
+				      <version>1.7</version>
+				      <executions>
+				        <execution>
+				          <phase>prepare-package</phase>
+				           <goals>
+		                       <goal>run</goal>
+		                   </goals>
+				          <configuration>
+				            <target>
+				             <echo>Replace file...</echo>
+				               <delete file="${project.build.outputDirectory}/taulukko.properties" />
+				              <copy file="${project.build.outputDirectory}/taulukko.properties"
+				                tofile="${project.build.outputDirectory}/taulukko.properties" overwrite="true"/>
+				            </target>
+				          </configuration> 
+				        </execution>
+				      </executions>
+				    </plugin> 
+					
+					 <plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>2.18.1</version>
+						<configuration>
+							<includes>
+								<include>**/noTest/**/*Test.java</include>								
+							</includes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile> 
+	</profiles>
+
+	
+	<organization>
+		<name>Taulukko</name>
+		<url>http://www.taulukko.com.br</url>
+	</organization>
+</project>

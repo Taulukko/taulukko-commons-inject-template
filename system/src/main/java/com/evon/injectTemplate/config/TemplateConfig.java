@@ -22,7 +22,8 @@ import java.util.List;
 import javax.servlet.ServletContext;
 
 import com.evon.injectTemplate.TemplateException;
-import com.evon.jsonParser.JSONParser;
+import com.taulukko.commons.parsers.jsonParser.JSONParser;
+
 
 public class TemplateConfig extends Thread {
 

@@ -70,7 +70,15 @@ public class InjectUtils {
 
 	}
 
-	public static boolean isTemplate(String uri) {
+	public static boolean isTemplate(String contextPath,String uri) {
+		  
+		if(contextPath.equals("/"))
+		{
+			contextPath = "";
+		}
+		
+		uri = uri.substring(contextPath.length());
+		
 		for (TemplateBean template : TemplateConfig.templates) {
 			if (uri.startsWith("/" + template.path)) {
 				return true;
