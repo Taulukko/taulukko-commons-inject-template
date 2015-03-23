@@ -30,7 +30,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.impl.client.BasicCookieStore;
 
 import com.evon.injectTemplate.config.InjectUtils;
 import com.evon.injectTemplate.config.TemplateBean;
@@ -146,14 +149,7 @@ public class InjectTemplateFilter implements Filter {
 			return;
 		}
 
-		String key = null;
-
-		if (template.cache.equals("SESSION")) {
-			key = buildKey(template, httpRequest);
-		} else if (template.cache.equals("ON")) {
-			key = template.path;
-
-		}
+		String key = buildKey(httpRequest, template);
 
 		System.out.println(key);
 
@@ -165,14 +161,11 @@ public class InjectTemplateFilter implements Filter {
 		boolean needRefresh = template.refreshInSeconds > 0
 				&& ((System.currentTimeMillis() - template.lastUpdate) / 1000) > template.refreshInSeconds;
 
-		boolean replaceTemplate = template.cache.equals("OFF")
+		boolean off = !template.cache.equals("SESSION") && !template.cache.equals("ON") ;
+		
+		boolean replaceTemplate = off 
 				|| !htmlContents.containsKey(key) || needRefresh;
-
-		/*
-		 * pra investigar erro de nulo, boolean notExist = key==null ||
-		 * !htmlContents.containsKey(key); if(!notExist) { notExist=!notExist;
-		 * //throw new ServletException("content not exist"); }
-		 */
+ 
 
 		if (replaceTemplate) {
 			if (needRefresh) {
@@ -190,6 +183,19 @@ public class InjectTemplateFilter implements Filter {
 		}
 
 		HTMLInfoBean templateHTML = templates.get("/" + template.path);
+		/*
+		 * TODO 1-) falta arrumar o atual erro de nulo pra cache igual a off 2-)
+		 * quando esta cache = session, ele não está fazendo por session e o
+		 * motivo é que ele não consegue passar o cookie que mantem a session
+		 * pra conexao interna dele. As solucoes sao:
+		 * 
+		 * a-) chamar diretamente a servlet passando como parametros em vez de
+		 * criar uma conexao http b-) ver se tem outro jeito de passar o cookie
+		 * de forma a falsificar a session c-) deixar de ser por sessao e ser
+		 * por parametros, e ai ter a possibilidade de passar o sessionid de
+		 * parametro e deixar a aplicacao fazer o cache e controlar. Neste caso
+		 * o parametro deveria ser sempre texto e poderia vir da query ou cookie
+		 */
 
 		String contentTemplate = htmlContents.get(key).getContent();
 		IDocument docOut = HTMLParser.parse(out);
@@ -216,6 +222,19 @@ public class InjectTemplateFilter implements Filter {
 		}
 
 		response.getWriter().print(contentTemplate);
+	}
+
+	private String buildKey(HttpServletRequest httpRequest,
+			TemplateBean template) {
+
+		if (template.cache.equals("SESSION")) {
+			return template.path + "&injectid="
+					+ httpRequest.getSession().getId();
+		} else if (template.cache.equals("ON")) {
+			return template.path;
+		} else {
+			return "noCache";
+		}
 	}
 
 	private TemplateBean getTemplatePathByURI(String uri) {
@@ -299,7 +318,7 @@ public class InjectTemplateFilter implements Filter {
 				+ contextName + "/" + template.path;
 
 		Request request = Request.Get(url);
-		
+
 		Enumeration<String> headerNames = httpRequest.getHeaderNames();
 
 		while (headerNames.hasMoreElements()) {
@@ -315,6 +334,14 @@ public class InjectTemplateFilter implements Filter {
 
 		String content;
 		try {
+			/*
+			CookieStore cookieStore = new BasicCookieStore();
+			//cookieStore.addCookie();
+			Executor executor = Executor.newInstance();
+			executor.cookieStore(cookieStore)
+			        .execute(Request.Get("/stuff"))
+			        .returnContent();*/
+			
 			content = request.execute().returnContent().asString();
 		} catch (IOException e) {
 			if (e.getMessage() != null && e.getMessage().equals("Not Found")) {
@@ -339,13 +366,7 @@ public class InjectTemplateFilter implements Filter {
 					+ selector + "'/>");
 		}
 
-		String key = null;
-
-		if (template.cache.equals("SESSION")) {
-			key = buildKey(template, httpRequest);
-		} else {
-			key = template.path;
-		}
+		String key = buildKey(httpRequest, template);
 
 		HtmlContentBean contentBean = new HtmlContentBean();
 		contentBean.setContent(content);
@@ -353,11 +374,6 @@ public class InjectTemplateFilter implements Filter {
 		htmlContents.remove(key);
 		htmlContents.put(key, contentBean);
 		htmlInfo.setSelectors(selectors);
-	}
-
-	private String buildKey(TemplateBean template,
-			HttpServletRequest httpRequest) {
-		return template.path + "&injectid=" + httpRequest.getSession().getId();
 	}
 
 	private void loadHTMLInfo(TemplateBean template, String domain,

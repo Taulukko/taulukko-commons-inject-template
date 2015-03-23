@@ -106,10 +106,10 @@ public class InjectUtilsTest {
 		template.path = "/template/template.jsp";
 		TemplateConfig.templates.add(template);
 		
-		boolean ret = InjectUtils.isTemplate("/template/template.jsp?version=3");
+		boolean ret = InjectUtils.isTemplate("", "/template/template.jsp?version=3");
 		Assert.assertTrue("Era esperado verdadeiro",ret);
 		
-		ret = InjectUtils.isTemplate("/jsp/template/template.jsp?version=3");
+		ret = InjectUtils.isTemplate("","/jsp/template/template.jsp?version=3");
 		Assert.assertFalse("Era esperado falso",ret);
 
 	}
