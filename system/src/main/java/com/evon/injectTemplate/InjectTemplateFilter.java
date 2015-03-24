@@ -14,6 +14,7 @@ package com.evon.injectTemplate;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -34,6 +36,7 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.cookie.BasicClientCookie;
 
 import com.evon.injectTemplate.config.InjectUtils;
 import com.evon.injectTemplate.config.TemplateBean;
@@ -161,11 +164,11 @@ public class InjectTemplateFilter implements Filter {
 		boolean needRefresh = template.refreshInSeconds > 0
 				&& ((System.currentTimeMillis() - template.lastUpdate) / 1000) > template.refreshInSeconds;
 
-		boolean off = !template.cache.equals("SESSION") && !template.cache.equals("ON") ;
-		
-		boolean replaceTemplate = off 
-				|| !htmlContents.containsKey(key) || needRefresh;
- 
+		boolean off = !template.cache.equals("SESSION")
+				&& !template.cache.equals("ON");
+
+		boolean replaceTemplate = off || !htmlContents.containsKey(key)
+				|| needRefresh;
 
 		if (replaceTemplate) {
 			if (needRefresh) {
@@ -184,7 +187,7 @@ public class InjectTemplateFilter implements Filter {
 
 		HTMLInfoBean templateHTML = templates.get("/" + template.path);
 		/*
-		 * TODO 1-) falta arrumar o atual erro de nulo pra cache igual a off 2-)
+		 * TODO 2-)
 		 * quando esta cache = session, ele não está fazendo por session e o
 		 * motivo é que ele não consegue passar o cookie que mantem a session
 		 * pra conexao interna dele. As solucoes sao:
@@ -321,28 +324,41 @@ public class InjectTemplateFilter implements Filter {
 
 		Enumeration<String> headerNames = httpRequest.getHeaderNames();
 
+		CookieStore cookieStore = new BasicCookieStore();
+
+		for (Cookie cookie : httpRequest.getCookies()) {
+			BasicClientCookie basicCookie = new BasicClientCookie(
+					cookie.getName(), cookie.getValue());
+			basicCookie.setDomain(cookie.getDomain());
+			basicCookie.setPath(cookie.getPath());
+			basicCookie.setVersion(cookie.getVersion());
+			basicCookie.setSecure(cookie.getSecure());
+			basicCookie.setExpiryDate(new Date(new Date().getTime()
+					+ cookie.getMaxAge() * 1000));
+
+			cookieStore.addCookie(basicCookie);
+		}
+
 		while (headerNames.hasMoreElements()) {
 			String name = headerNames.nextElement();
 
 			Enumeration<String> headerValues = httpRequest.getHeaders(name);
 			while (headerValues.hasMoreElements()) {
 				String value = headerValues.nextElement();
-				System.out.println("Add " + name + " = " + value);
-				request = request.addHeader(name, value);
+				if (!name.equals("cookie")) {
+					System.out.println("Add " + name + " = " + value);
+					request = request.addHeader(name, value);
+				}
 			}
 		}
 
 		String content;
 		try {
-			/*
-			CookieStore cookieStore = new BasicCookieStore();
-			//cookieStore.addCookie();
 			Executor executor = Executor.newInstance();
-			executor.cookieStore(cookieStore)
-			        .execute(Request.Get("/stuff"))
-			        .returnContent();*/
-			
-			content = request.execute().returnContent().asString();
+			content = executor.cookieStore(cookieStore).execute(request)
+					.returnContent().asString();
+
+			// content = request.execute().returnContent().asString();
 		} catch (IOException e) {
 			if (e.getMessage() != null && e.getMessage().equals("Not Found")) {
 				throw new IOException("Template [" + url + "] not found!", e);
