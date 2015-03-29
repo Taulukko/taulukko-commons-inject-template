@@ -21,6 +21,8 @@ lib
 dist/*.jar
 .classpath
 .project
+target
+
 
 # Logs#
 ######################
@@ -38,4 +40,3 @@ log
 .Trashes
 ehthumbs.db
 Thumbs.db
-
