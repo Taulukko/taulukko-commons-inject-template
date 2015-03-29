@@ -9,7 +9,7 @@
  * 
  */
 
-package com.taulukko.injecttemplate.config;
+package com.taulukko.commons.injecttemplate.config;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -21,8 +21,8 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 
+import com.taulukko.commons.injecttemplate.TemplateException;
 import com.taulukko.commons.parsers.jsonParser.JSONParser;
-import com.taulukko.injecttemplate.TemplateException;
 
 public class TemplateConfig extends Thread {
 

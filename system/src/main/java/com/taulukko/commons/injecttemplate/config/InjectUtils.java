@@ -1,4 +1,4 @@
-package com.taulukko.injecttemplate.config;
+package com.taulukko.commons.injecttemplate.config;
 
 public class InjectUtils {
 
@@ -80,7 +80,7 @@ public class InjectUtils {
 		uri = uri.substring(contextPath.length());
 		
 		for (TemplateBean template : TemplateConfig.templates) {
-			if (uri.startsWith("/" + template.path)) {
+			if (uri.startsWith(template.path)) {
 				return true;
 			}
 		}

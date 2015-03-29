@@ -1,4 +1,4 @@
-package com.taulukko.injecttemplate;
+package com.taulukko.commons.injecttemplate;
 
 import java.io.IOException;
 import java.io.PrintWriter;

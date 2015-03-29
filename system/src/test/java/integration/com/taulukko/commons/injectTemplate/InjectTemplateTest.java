@@ -22,8 +22,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.taulukko.injecttemplate.config.TemplateBean;
-import com.taulukko.injecttemplate.config.TemplateConfig;
+import com.taulukko.commons.injecttemplate.config.TemplateBean;
+import com.taulukko.commons.injecttemplate.config.TemplateConfig;
 
 public class InjectTemplateTest {
 

@@ -1,4 +1,4 @@
-package com.taulukko.injecttemplate.config;
+package com.taulukko.commons.injecttemplate.config;
 
 public class TemplateBean {
 	public String name = null;

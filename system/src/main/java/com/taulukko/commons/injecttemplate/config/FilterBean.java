@@ -1,4 +1,4 @@
-package com.taulukko.injecttemplate.config;
+package com.taulukko.commons.injecttemplate.config;
 
 import java.util.List;
 

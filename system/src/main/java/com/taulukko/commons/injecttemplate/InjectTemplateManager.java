@@ -1,7 +1,7 @@
-package com.taulukko.injecttemplate;
+package com.taulukko.commons.injecttemplate;
 
-import com.taulukko.injecttemplate.config.TemplateBean;
-import com.taulukko.injecttemplate.config.TemplateConfig;
+import com.taulukko.commons.injecttemplate.config.TemplateBean;
+import com.taulukko.commons.injecttemplate.config.TemplateConfig;
 
 public class InjectTemplateManager {
 	

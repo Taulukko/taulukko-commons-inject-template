@@ -1,13 +1,13 @@
-package evonInjectTemplate;
+package com.taulukko.commons.injectttemplate;
 
 import java.util.ArrayList;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.taulukko.injecttemplate.config.InjectUtils;
-import com.taulukko.injecttemplate.config.TemplateBean;
-import com.taulukko.injecttemplate.config.TemplateConfig;
+import com.taulukko.commons.injecttemplate.config.InjectUtils;
+import com.taulukko.commons.injecttemplate.config.TemplateBean;
+import com.taulukko.commons.injecttemplate.config.TemplateConfig;
   
 
 public class InjectUtilsTest {

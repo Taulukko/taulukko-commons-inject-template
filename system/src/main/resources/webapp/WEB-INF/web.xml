@@ -7,7 +7,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns
   
   <filter>
     <filter-name>InjectTemplateFilter</filter-name>
-    <filter-class>com.taulukko.injecttemplate.InjectTemplateFilter</filter-class>
+    <filter-class>com.taulukko.commons.injecttemplate.InjectTemplateFilter</filter-class>
   </filter>
   <filter-mapping>
     <filter-name>InjectTemplateFilter</filter-name>
