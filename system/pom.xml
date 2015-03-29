@@ -10,7 +10,7 @@
 	<groupId>com.taulukko.commons</groupId>
 	<artifactId>taulukko-commons-inject-template</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<!-- -SNAPSHOT -->	
   
 	

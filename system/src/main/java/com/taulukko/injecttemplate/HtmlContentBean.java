@@ -1,4 +1,4 @@
-package com.evon.injectTemplate;
+package com.taulukko.injecttemplate;
 
 public class HtmlContentBean {
 	

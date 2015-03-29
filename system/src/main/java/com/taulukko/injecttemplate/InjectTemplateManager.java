@@ -1,7 +1,7 @@
-package com.evon.injectTemplate;
+package com.taulukko.injecttemplate;
 
-import com.evon.injectTemplate.config.TemplateBean;
-import com.evon.injectTemplate.config.TemplateConfig;
+import com.taulukko.injecttemplate.config.TemplateBean;
+import com.taulukko.injecttemplate.config.TemplateConfig;
 
 public class InjectTemplateManager {
 	

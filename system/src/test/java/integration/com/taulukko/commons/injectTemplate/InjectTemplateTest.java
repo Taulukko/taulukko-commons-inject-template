@@ -22,8 +22,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.evon.injectTemplate.config.TemplateBean;
-import com.evon.injectTemplate.config.TemplateConfig;
+import com.taulukko.injecttemplate.config.TemplateBean;
+import com.taulukko.injecttemplate.config.TemplateConfig;
 
 public class InjectTemplateTest {
 

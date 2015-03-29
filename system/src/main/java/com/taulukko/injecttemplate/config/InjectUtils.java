@@ -1,4 +1,4 @@
-package com.evon.injectTemplate.config;
+package com.taulukko.injecttemplate.config;
 
 public class InjectUtils {
 

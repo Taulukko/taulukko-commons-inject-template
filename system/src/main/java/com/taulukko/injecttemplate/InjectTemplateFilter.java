@@ -9,7 +9,7 @@
  * 
  */
 
-package com.evon.injectTemplate;
+package com.taulukko.injecttemplate;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -34,13 +34,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.fluent.Request;
 
-import com.evon.injectTemplate.config.InjectUtils;
-import com.evon.injectTemplate.config.TemplateBean;
-import com.evon.injectTemplate.config.TemplateConfig;
 import com.taulukko.commons.parsers.htmlparser.HTMLParser;
 import com.taulukko.commons.parsers.htmlparser.IDocument;
 import com.taulukko.commons.parsers.htmlparser.IElement;
 import com.taulukko.commons.parsers.htmlparser.IElements;
+import com.taulukko.injecttemplate.config.InjectUtils;
+import com.taulukko.injecttemplate.config.TemplateBean;
+import com.taulukko.injecttemplate.config.TemplateConfig;
 
 public class InjectTemplateFilter implements Filter {
 	private static Map<String, String> contentTypes = null;

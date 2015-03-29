@@ -4,7 +4,7 @@
   <groupId>com.taulukko.commons</groupId>
   <artifactId>taulukko-commons-inject-template-example</artifactId>
   <packaging>war</packaging>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.2</version>
   <name>taulukko-commons-inject-template-example Maven Webapp</name>
   <url>http://maven.apache.org</url>
   
@@ -22,16 +22,14 @@
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
       <scope>test</scope>
-    </dependency>
+    </dependency> 
     <dependency>
 		<groupId>com.taulukko.commons</groupId>
 		<artifactId>taulukko-commons-inject-template</artifactId>
-      	<version>1.0.1</version>
+      	<version>1.0.2</version>
       	<type>jar</type>
-    </dependency>
-    
-     
-		
+    </dependency> 
+    	
 		<dependency>
 		    <groupId>org.apache.axis</groupId>
 		    <artifactId>axis-ant</artifactId>
