@@ -14,7 +14,6 @@ package com.evon.injectTemplate;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +24,15 @@ import java.util.regex.Pattern;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.cookie.BasicClientCookie;
 
 import com.evon.injectTemplate.config.InjectUtils;
 import com.evon.injectTemplate.config.TemplateBean;
@@ -104,127 +100,122 @@ public class InjectTemplateFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
 
-		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		HttpServletResponse httpResponse = (HttpServletResponse) response;
+		try {
 
-		StringWriter writer = new StringWriter();
-		BufferedResponseWrapper wrapper = new BufferedResponseWrapper(
-				(HttpServletResponse) response, writer);
-		chain.doFilter(request, wrapper);
+			HttpServletRequest httpRequest = (HttpServletRequest) request;
+			HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-		String contentType = null;
-		String uri = httpRequest.getRequestURI();
+			StringWriter writer = new StringWriter();
+			BufferedResponseWrapper wrapper = new BufferedResponseWrapper(
+					(HttpServletResponse) response, writer);
+			chain.doFilter(request, wrapper);
 
-		contentType = httpResponse.getContentType();
+			String contentType = null;
+			String uri = httpRequest.getRequestURI();
 
-		if (contentTypes.containsKey(uri)) {
-			contentType = contentTypes.get(uri);
-		} else if (contentType != null) {
-			contentTypes.put(uri, contentType);
-		}
-		contentType = (contentType == null) ? "none" : contentType;
+			contentType = httpResponse.getContentType();
 
-		String out = writer.getBuffer().toString();
+			if (contentTypes.containsKey(uri)) {
+				contentType = contentTypes.get(uri);
+			} else if (contentType != null) {
+				contentTypes.put(uri, contentType);
+			}
+			contentType = (contentType == null) ? "none" : contentType;
 
-		boolean requestedURIIsTheTemplate = false;
+			String out = writer.getBuffer().toString();
 
-		requestedURIIsTheTemplate = InjectUtils.isTemplate(request
-				.getServletContext().getContextPath(), uri);
+			writer.close();
 
-		boolean contentTypeIsText = !wrapper.isBinary() && contentType != null
-				&& !contentType.equals("none");
+			boolean requestedURIIsTheTemplate = false;
 
-		if (requestedURIIsTheTemplate || !contentTypeIsText) {
-			if (contentTypeIsText) {
+			requestedURIIsTheTemplate = InjectUtils.isTemplate(request
+					.getServletContext().getContextPath(), uri);
+
+			boolean contentTypeIsText = !wrapper.isBinary()
+					&& contentType != null && !contentType.equals("none");
+
+			if (requestedURIIsTheTemplate || !contentTypeIsText) {
+				if (contentTypeIsText) {
+					response.getWriter().print(out);
+				}
+				return;
+			}
+
+			if (!templateLodaded && !templateLodadedStarted) {
+				loadTemplates(httpRequest);
+			}
+
+			TemplateBean template = getTemplatePathByURI(uri);
+
+			if (template == null) {
 				response.getWriter().print(out);
-			}
-			return;
-		}
-
-		if (!templateLodaded && !templateLodadedStarted) {
-			loadTemplates(httpRequest);
-		}
-
-		TemplateBean template = getTemplatePathByURI(uri);
-
-		if (template == null) {
-			response.getWriter().print(out);
-			return;
-		}
-
-		String key = buildKey(httpRequest, template);
-
-		System.out.println(key);
-
-		if (!templates.containsKey("/" + template.path)) {
-			throw new ServletException("Template [" + template.path
-					+ "] not founded");
-		}
-
-		boolean needRefresh = template.refreshInSeconds > 0
-				&& ((System.currentTimeMillis() - template.lastUpdate) / 1000) > template.refreshInSeconds;
-
-		boolean off = !template.cache.equals("SESSION")
-				&& !template.cache.equals("ON");
-
-		boolean replaceTemplate = off || !htmlContents.containsKey(key)
-				|| needRefresh;
-
-		if (replaceTemplate) {
-			if (needRefresh) {
-				template.lastUpdate = System.currentTimeMillis();
+				return;
 			}
 
-			try {
-				loadContentTemplate(template, request.getServerName(), request
-						.getServletContext().getContextPath(),
-						request.getServerPort(), request.getProtocol()
-								.contains("HTTPS"), httpRequest);
-			} catch (Exception e) {
-				throw new ServletException(e.getMessage(), e);
+			String key = buildKey(httpRequest, template);
+
+			if (!templates.containsKey("/" + template.path)) {
+				throw new ServletException("Template [" + template.path
+						+ "] not founded");
 			}
+
+			boolean needRefresh = template.refreshInSeconds > 0
+					&& ((System.currentTimeMillis() - template.lastUpdate) / 1000) > template.refreshInSeconds;
+
+			boolean off = !template.cache.equals("SESSION")
+					&& !template.cache.equals("ON");
+
+			boolean replaceTemplate = off || !htmlContents.containsKey(key)
+					|| needRefresh;
+
+			if (replaceTemplate) {
+				if (needRefresh) {
+					template.lastUpdate = System.currentTimeMillis();
+				}
+
+				try {
+					loadContentTemplate(template, request.getServerName(),
+							request.getServletContext().getContextPath(),
+							request.getServerPort(), request.getProtocol()
+									.contains("HTTPS"), httpRequest,
+							httpResponse);
+				} catch (Exception e) {
+					throw new ServletException(e.getMessage(), e);
+				}
+			}
+
+			HTMLInfoBean templateHTML = templates.get("/" + template.path);
+
+			String contentTemplate = htmlContents.get(key).getContent();
+			IDocument docOut = HTMLParser.parse(out);
+
+			for (String selector : templateHTML.getSelectors()) {
+				IElements elements = docOut.select(selector);
+				if (elements.size() == 0) {
+					System.out.println("WARNING: Selector [" + selector
+							+ "] in template [" + templateHTML.getUri()
+							+ "] not founded in ["
+							+ httpRequest.getRequestURI() + "]");
+					continue;
+				}
+				if (elements.size() != 1) {
+					System.out
+							.println("WARNING: Selector get many elements. Choosed the first to URI: "
+									+ templateHTML.getUri());
+				}
+				IElement element = elements.get(0);
+				String innerHTML = element.html();
+
+				contentTemplate = contentTemplate.replace("<INJECT selector='"
+						+ selector + "'/>", innerHTML);
+			}
+
+			response.getWriter().print(contentTemplate);
+		} catch (Exception e) {
+			throw e;
+		} finally {
+
 		}
-
-		HTMLInfoBean templateHTML = templates.get("/" + template.path);
-		/*
-		 * TODO 2-)
-		 * quando esta cache = session, ele não está fazendo por session e o
-		 * motivo é que ele não consegue passar o cookie que mantem a session
-		 * pra conexao interna dele. As solucoes sao:
-		 * 
-		 * a-) chamar diretamente a servlet passando como parametros em vez de
-		 * criar uma conexao http b-) ver se tem outro jeito de passar o cookie
-		 * de forma a falsificar a session c-) deixar de ser por sessao e ser
-		 * por parametros, e ai ter a possibilidade de passar o sessionid de
-		 * parametro e deixar a aplicacao fazer o cache e controlar. Neste caso
-		 * o parametro deveria ser sempre texto e poderia vir da query ou cookie
-		 */
-
-		String contentTemplate = htmlContents.get(key).getContent();
-		IDocument docOut = HTMLParser.parse(out);
-
-		for (String selector : templateHTML.getSelectors()) {
-			IElements elements = docOut.select(selector);
-			if (elements.size() == 0) {
-				System.out.println("WARNING: Selector [" + selector
-						+ "] in template [" + templateHTML.getUri()
-						+ "] not founded in [" + httpRequest.getRequestURI()
-						+ "]");
-				continue;
-			}
-			if (elements.size() != 1) {
-				System.out
-						.println("WARNING: Selector get many elements. Choosed the first to URI: "
-								+ templateHTML.getUri());
-			}
-			IElement element = elements.get(0);
-			String innerHTML = element.html();
-
-			contentTemplate = contentTemplate.replace("<INJECT selector='"
-					+ selector + "'/>", innerHTML);
-		}
-
-		response.getWriter().print(contentTemplate);
 	}
 
 	private String buildKey(HttpServletRequest httpRequest,
@@ -251,12 +242,6 @@ public class InjectTemplateFilter implements Filter {
 		return null;
 	}
 
-	/*
-	 * @TODO: poderia ter um cache que guarda o resultado e tamb��m quantas
-	 * vezes foi usado nos ultimos 5 min em 5 em 5 minutos (ou configuravel),
-	 * poderia excluir os menos usados e manter um rank dos mais usados isso
-	 * agilizaria e eviatria o for*for abaixo.
-	 */
 	private boolean isTempltaToThatURI(TemplateBean template, String uri) {
 		for (String include : template.filter.include) {
 			if (InjectUtils.isTemplateIncludeToThatURI(include, uri)) {
@@ -308,7 +293,8 @@ public class InjectTemplateFilter implements Filter {
 
 	private void loadContentTemplate(TemplateBean template, String domain,
 			String contextName, Integer port, boolean https,
-			HttpServletRequest httpRequest) throws IOException {
+			HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws Exception {
 		HTMLInfoBean htmlInfo = templates.get("/" + template.path);
 
 		String sport = (port == null) ? "" : ":" + String.valueOf(port);
@@ -320,46 +306,28 @@ public class InjectTemplateFilter implements Filter {
 		String url = htmlInfo.getProtocol() + "://" + domain + sport
 				+ contextName + "/" + template.path;
 
-		Request request = Request.Get(url);
-
-		Enumeration<String> headerNames = httpRequest.getHeaderNames();
-
-		CookieStore cookieStore = new BasicCookieStore();
-
-		for (Cookie cookie : httpRequest.getCookies()) {
-			BasicClientCookie basicCookie = new BasicClientCookie(
-					cookie.getName(), cookie.getValue());
-			basicCookie.setDomain(cookie.getDomain());
-			basicCookie.setPath(cookie.getPath());
-			basicCookie.setVersion(cookie.getVersion());
-			basicCookie.setSecure(cookie.getSecure());
-			basicCookie.setExpiryDate(new Date(new Date().getTime()
-					+ cookie.getMaxAge() * 1000));
-
-			cookieStore.addCookie(basicCookie);
-		}
-
-		while (headerNames.hasMoreElements()) {
-			String name = headerNames.nextElement();
-
-			Enumeration<String> headerValues = httpRequest.getHeaders(name);
-			while (headerValues.hasMoreElements()) {
-				String value = headerValues.nextElement();
-				if (!name.equals("cookie")) {
-					System.out.println("Add " + name + " = " + value);
-					request = request.addHeader(name, value);
-				}
-			}
-		}
-
 		String content;
 		try {
-			Executor executor = Executor.newInstance();
-			content = executor.cookieStore(cookieStore).execute(request)
-					.returnContent().asString();
 
-			// content = request.execute().returnContent().asString();
-		} catch (IOException e) {
+			ServletContext context = httpRequest.getServletContext();
+
+			String uri = (template.path.startsWith("/")) ? template.path : "/"
+					+ template.path;
+
+			RequestDispatcher dispatcher = context.getRequestDispatcher(uri);
+
+			StringWriter writer = new StringWriter();
+
+			BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(
+					httpResponse, writer);
+
+			dispatcher.forward(httpRequest, responseWrapper);
+
+			content = writer.getBuffer().toString();
+
+			writer.close();
+
+		} catch (IOException | ServletException e) {
 			if (e.getMessage() != null && e.getMessage().equals("Not Found")) {
 				throw new IOException("Template [" + url + "] not found!", e);
 			}
@@ -390,6 +358,21 @@ public class InjectTemplateFilter implements Filter {
 		htmlContents.remove(key);
 		htmlContents.put(key, contentBean);
 		htmlInfo.setSelectors(selectors);
+	}
+
+	private Request headerCopy(HttpServletRequest httpRequest, Request request,
+			Enumeration<String> headerNames) {
+		while (headerNames.hasMoreElements()) {
+			String name = headerNames.nextElement();
+
+			Enumeration<String> headerValues = httpRequest.getHeaders(name);
+			while (headerValues.hasMoreElements()) {
+				String value = headerValues.nextElement();
+				request = request.addHeader(name, value);
+
+			}
+		}
+		return request;
 	}
 
 	private void loadHTMLInfo(TemplateBean template, String domain,

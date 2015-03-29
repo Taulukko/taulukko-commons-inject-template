@@ -10,7 +10,8 @@
 		<P>Template Content Head</P>
 		<inject selector="body"/>
 		<P>Template Content Foot</P>
-		<h2>SessionInfo:</h2>
-		<P><%=request.getSession().getId() %><p>
+		<h2>Session Template:</h2>
+		<P>Sessionid:<%=request.getSession().getId() %></p>
+		<P>Random:<%=Math.round(Math.random() * 1000000)%></P>
 	</BODY>
 </HTML> 

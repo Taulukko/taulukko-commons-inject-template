@@ -24,7 +24,6 @@ import javax.servlet.ServletContext;
 import com.evon.injectTemplate.TemplateException;
 import com.taulukko.commons.parsers.jsonParser.JSONParser;
 
-
 public class TemplateConfig extends Thread {
 
 	// //////////////////
@@ -33,11 +32,13 @@ public class TemplateConfig extends Thread {
 	public static final String CONFIG_PATH = "/WEB-INF/inject.json";
 	public static final String LINE_SEPARATOR = "#########################################################";
 
+	private static String absoluteConfigPath = null;
+
 	public static boolean loaded = false;
 
 	public static boolean live = false;
 
- 	/**
+	/**
 	 * Description: Templates.
 	 */
 	public static List<TemplateBean> templates = new ArrayList<TemplateBean>();
@@ -50,18 +51,29 @@ public class TemplateConfig extends Thread {
 	private TemplateConfig() {
 	}
 
+	public static void reload() throws TemplateException {
+		if (absoluteConfigPath == null) {
+			throw new TemplateException("Invalid state! Use load first!");
+		}
+		load(null);
+	}
+
 	public static void load(ServletContext servletContext)
 			throws TemplateException {
 
 		BufferedInputStream inStream = null;
 
+		if (absoluteConfigPath == null) {
+			absoluteConfigPath = servletContext.getRealPath(CONFIG_PATH);
+		}
+
 		try {
 			inStream = new BufferedInputStream(new FileInputStream(
-					servletContext.getRealPath(CONFIG_PATH)));
+					absoluteConfigPath));
 		} catch (FileNotFoundException fe) {
 			throw new TemplateException(
 					"Template properties file not founded in ("
-							+ servletContext.getRealPath(CONFIG_PATH) + ")", fe);
+							+ absoluteConfigPath + ")", fe);
 		}
 
 		StringBuffer stream = new StringBuffer();
@@ -88,7 +100,7 @@ public class TemplateConfig extends Thread {
 
 		ConfigBean config = JSONParser.convert(json, ConfigBean.class);
 
- 		if (config.templates != null) {
+		if (config.templates != null) {
 			TemplateConfig.templates = config.templates;
 		}
 

@@ -3,7 +3,7 @@
 #build files
 system/build/*
 system/.*
-
+doc/inject-template-example/system/.settings
 #temporary files
 system/tomcat*
  
@@ -19,7 +19,9 @@ lib
 .svn
 *.scc
 dist/*.jar
- 
+.classpath
+.project
+
 # Logs#
 ######################
 *.log
@@ -36,3 +38,4 @@ log
 .Trashes
 ehthumbs.db
 Thumbs.db
+
