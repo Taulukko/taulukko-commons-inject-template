@@ -323,6 +323,12 @@ public class InjectTemplateFilter implements Filter {
 
 			dispatcher.forward(httpRequest, responseWrapper);
 
+			int status = responseWrapper.getStatus();
+			if (status != 200) {
+				throw new Exception("Template  [" + url + "] not loaded - HTML status code "
+						+ status + " must be 200");
+			}
+
 			content = writer.getBuffer().toString();
 
 			writer.close();
