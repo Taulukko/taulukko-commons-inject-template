@@ -72,7 +72,7 @@ public class TemplateConfig extends Thread {
 					absoluteConfigPath));
 		} catch (FileNotFoundException fe) {
 			throw new TemplateException(
-					"Template properties file not founded in ("
+					"Template json config file not founded in ("
 							+ absoluteConfigPath + ")", fe);
 		}
 
@@ -109,8 +109,8 @@ public class TemplateConfig extends Thread {
 		}
 		if (TemplateConfig.verbose) {
 			System.out.println("\n\n" + LINE_SEPARATOR + "\n[" + new Date()
-					+ "] : Template properties loaded!");
-			System.out.print("\nproperties = " + json);
+					+ "] : Template json config loaded!");
+			System.out.print("\njson = " + json);
 			System.out.print("\n" + LINE_SEPARATOR + "\n\n");
 		}
 	}
