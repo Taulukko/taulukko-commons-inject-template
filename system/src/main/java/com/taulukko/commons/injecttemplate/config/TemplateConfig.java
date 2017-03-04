@@ -58,8 +58,7 @@ public class TemplateConfig extends Thread {
 		load(null);
 	}
 
-	public static void load(ServletContext servletContext)
-			throws TemplateException {
+	public static void load(ServletContext servletContext) throws TemplateException {
 
 		BufferedInputStream inStream = null;
 
@@ -68,12 +67,9 @@ public class TemplateConfig extends Thread {
 		}
 
 		try {
-			inStream = new BufferedInputStream(new FileInputStream(
-					absoluteConfigPath));
+			inStream = new BufferedInputStream(new FileInputStream(absoluteConfigPath));
 		} catch (FileNotFoundException fe) {
-			throw new TemplateException(
-					"Template json config file not founded in ("
-							+ absoluteConfigPath + ")", fe);
+			throw new TemplateException("Template json config file not founded in (" + absoluteConfigPath + ")", fe);
 		}
 
 		StringBuffer stream = new StringBuffer();
@@ -88,16 +84,18 @@ public class TemplateConfig extends Thread {
 			}
 		} catch (IOException ioe) {
 			throw new TemplateException(ioe.getMessage(), ioe);
-		}
-
-		try {
-			inStream.close();
-		} catch (IOException e) {
-			throw new TemplateException(e.getMessage(), e);
+		} finally {
+			try {
+				inStream.close();
+			} catch (IOException e) {
+				throw new TemplateException(e.getMessage(), e);
+			}
 		}
 
 		String json = stream.toString();
 
+		System.out.println(json);	
+		
 		ConfigBean config = JSONParser.convert(json, ConfigBean.class);
 
 		if (config.templates != null) {
@@ -108,8 +106,7 @@ public class TemplateConfig extends Thread {
 			TemplateConfig.verbose = config.verbose;
 		}
 		if (TemplateConfig.verbose) {
-			System.out.println("\n\n" + LINE_SEPARATOR + "\n[" + new Date()
-					+ "] : Template json config loaded!");
+			System.out.println("\n\n" + LINE_SEPARATOR + "\n[" + new Date() + "] : Template json config loaded!");
 			System.out.print("\njson = " + json);
 			System.out.print("\n" + LINE_SEPARATOR + "\n\n");
 		}

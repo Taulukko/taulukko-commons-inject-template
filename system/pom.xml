@@ -11,14 +11,14 @@
 	<groupId>com.taulukko.commons</groupId>
 	<artifactId>taulukko-commons-inject-template</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.6</version>
+	<version>1.0.9</version>
 	<!-- -SNAPSHOT -->
 
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.11</junit.version>
-		<jdk.version>1.7</jdk.version>
+		<jdk.version>1.8</jdk.version>
 		<servlet.version>2.5</servlet.version>
 		<tomcat.version>8.0.20</tomcat.version>
 		<encoding>UTF-8</encoding>
@@ -102,7 +102,7 @@
 		<dependency>
 			<groupId>com.taulukko.commons</groupId>
 			<artifactId>taulukko-commons-parsers</artifactId>
-			<version>1.0.3</version>
+			<version>1.0.8</version>
 		</dependency>
 
 		<dependency>
@@ -127,12 +127,45 @@
 			<groupId>javax</groupId>
 			<artifactId>javaee-web-api</artifactId>
 			<version>6.0</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
 
 	<build>
 		<plugins>
+
+			<!-- To total integration with eclipse and groovy, add groovy support 
+				from distribuition https://github.com/groovy/groovy-eclipse/wiki -->
+			<!-- To neon http://dist.springsource.org/snapshot/GRECLIPSE/e4.6/ -->
+			<!-- To luna http://dist.springsource.org/release/GRECLIPSE/e4.4/ -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<compilerId>groovy-eclipse-compiler</compilerId>
+					<argLine>-Dfile.encoding=${encoding}</argLine>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-eclipse-compiler</artifactId>
+						<version>2.9.1-01</version>
+					</dependency>
+					<!-- for 2.8.0-01 and later you must have an explicit dependency on 
+						groovy-eclipse-batch -->
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-eclipse-batch</artifactId>
+						<version>2.3.7-01</version>
+					</dependency>
+				</dependencies>
+
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

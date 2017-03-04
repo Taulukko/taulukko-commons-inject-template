@@ -14,7 +14,6 @@ package com.taulukko.commons.injecttemplate;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,8 +30,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.http.client.fluent.Request;
 
 import com.taulukko.commons.injecttemplate.config.InjectUtils;
 import com.taulukko.commons.injecttemplate.config.TemplateBean;
@@ -366,20 +363,7 @@ public class InjectTemplateFilter implements Filter {
 		htmlInfo.setSelectors(selectors);
 	}
 
-	private Request headerCopy(HttpServletRequest httpRequest, Request request,
-			Enumeration<String> headerNames) {
-		while (headerNames.hasMoreElements()) {
-			String name = headerNames.nextElement();
-
-			Enumeration<String> headerValues = httpRequest.getHeaders(name);
-			while (headerValues.hasMoreElements()) {
-				String value = headerValues.nextElement();
-				request = request.addHeader(name, value);
-
-			}
-		}
-		return request;
-	}
+	 
 
 	private void loadHTMLInfo(TemplateBean template, String domain,
 			Integer port, boolean https, HttpServletRequest httpRequest)

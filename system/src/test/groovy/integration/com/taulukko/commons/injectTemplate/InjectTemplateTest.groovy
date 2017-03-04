@@ -28,8 +28,7 @@ import com.taulukko.commons.injecttemplate.config.TemplateConfig;
 public class InjectTemplateTest {
 
 	private static final Integer TOMCAT_PORT = 8182;
-	private static final String URL_BASE = "http://localhost:" + TOMCAT_PORT
-			+ "/";
+	private static final String URL_BASE = "http://localhost:${TOMCAT_PORT}/";
 	private static Tomcat tomcat = null;
 	private static Thread thread = null;
 
@@ -38,38 +37,37 @@ public class InjectTemplateTest {
 
 		thread = new Thread(new Runnable() {
 
-			@Override
-			public void run() {
-				String webappDirLocation = new File("").getAbsolutePath()
-						+ "/src/main/resources/webapp";
-				tomcat = new Tomcat();
+					@Override
+					public void run() {
+						String webappDirLocation = "${new File("").getAbsolutePath()}/src/main/resources/webapp";
+						tomcat = new Tomcat();
 
-				// The port that we should run on can be set into an environment
-				// variable
-				// Look for that variable and default to 8080 if it isn't there.
-				String webPort = System.getenv("PORT");
-				if (webPort == null || webPort.isEmpty()) {
-					webPort = TOMCAT_PORT.toString();
-				}
+						// The port that we should run on can be set into an environment
+						// variable
+						// Look for that variable and default to 8080 if it isn't there.
+						String webPort = System.getenv("PORT");
+						if (webPort == null || webPort.isEmpty()) {
+							webPort = TOMCAT_PORT.toString();
+						}
 
-				tomcat.setPort(Integer.valueOf(webPort));
+						tomcat.setPort(Integer.valueOf(webPort));
 
-				try {
-					Thread.sleep(1000);
-					tomcat.addWebapp("/",
-							new File(webappDirLocation).getAbsolutePath());
+						try {
+							Thread.sleep(1000);
+							tomcat.addWebapp("/",
+									new File(webappDirLocation).getAbsolutePath());
 
-					System.out.println("configuring app with basedir: "
-							+ new File(webappDirLocation).getAbsolutePath());
+							System.out.println("configuring app with basedir: "
+									+ new File(webappDirLocation).getAbsolutePath());
 
-					tomcat.start();
-					tomcat.getServer().await();
-				} catch (ServletException | LifecycleException
+							tomcat.start();
+							tomcat.getServer().await();
+						} catch (ServletException | LifecycleException
 						| InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		});
+							e.printStackTrace();
+						}
+					}
+				});
 
 		thread.start();
 
@@ -109,7 +107,7 @@ public class InjectTemplateTest {
 
 	@Test
 	public void defaultTemplateTest() throws ClientProtocolException,
-			IOException {
+	IOException {
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost httpPost = new HttpPost(URL_BASE);
 		HttpResponse httpresponse = client.execute(httpPost);
