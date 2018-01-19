@@ -47,11 +47,11 @@ public class InjectTemplateFilter implements Filter {
 	private static boolean templateLodadedStarted = false;
 	static Map<String, HtmlContentBean> htmlContents = new ConcurrentHashMap<>();
 
-	// remover o content do template pois n��o vai mais precisar
-	// ver se resolve, se mesmo com cache n��o ocorre mais a repti����o de
+	// remover o content do template pois nao vai mais precisar
+	// ver se resolve, se mesmo com cache nao ocorre mais a reptição de
 	// google
-	// analitics e tamb��m se para o problema dos erros
-	// por ultimo, fazer um tuning pra ver se consegue melhorar o tempo mas s��
+	// analitics e também se para o problema dos erros
+	// por ultimo, fazer um tuning pra ver se consegue melhorar o tempo mas só
 	// depois que corrigir os erros por timeout que estao dando agora
 
 	@Override
@@ -129,7 +129,7 @@ public class InjectTemplateFilter implements Filter {
 					.getServletContext().getContextPath(), uri);
 
 			boolean contentTypeIsText = !wrapper.isBinary()
-					&& contentType != null && !contentType.equals("none");
+					&& !contentType.equals("none");
 
 			if (requestedURIIsTheTemplate || !contentTypeIsText) {
 				if (contentTypeIsText) {
