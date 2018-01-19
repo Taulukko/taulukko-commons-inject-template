@@ -40,19 +40,15 @@ import com.taulukko.commons.parsers.htmlparser.IElement;
 import com.taulukko.commons.parsers.htmlparser.IElements;
 
 public class InjectTemplateFilter implements Filter {
+
+	private static Pattern pattern = Pattern.compile("<INJECT[ ]{1,}selector=[\"'](.*?)[\"']/>",
+			Pattern.CASE_INSENSITIVE + Pattern.DOTALL);
+	
 	private static Map<String, String> contentTypes = null;
 	private static Map<String, HTMLInfoBean> templates = null;
 
 	private static boolean templateLodaded = false;
 	private static boolean templateLodadedStarted = false;
-	static Map<String, HtmlContentBean> htmlContents = new ConcurrentHashMap<>();
-
-	// remover o content do template pois nao vai mais precisar
-	// ver se resolve, se mesmo com cache nao ocorre mais a reptição de
-	// google
-	// analitics e também se para o problema dos erros
-	// por ultimo, fazer um tuning pra ver se consegue melhorar o tempo mas só
-	// depois que corrigir os erros por timeout que estao dando agora
 
 	@Override
 	public void destroy() {
@@ -88,14 +84,13 @@ public class InjectTemplateFilter implements Filter {
 		for (TemplateBean template : TemplateConfig.templates) {
 			System.out.println("name:" + template.name);
 			System.out.println("path:" + template.path);
-			System.out.println("cache:" + template.cache);
 			System.out.println("filter:" + template.filter);
 		}
 	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
 
 		try {
 
@@ -103,8 +98,7 @@ public class InjectTemplateFilter implements Filter {
 			HttpServletResponse httpResponse = (HttpServletResponse) response;
 
 			StringWriter writer = new StringWriter();
-			BufferedResponseWrapper wrapper = new BufferedResponseWrapper(
-					(HttpServletResponse) response, writer);
+			BufferedResponseWrapper wrapper = new BufferedResponseWrapper((HttpServletResponse) response, writer);
 			chain.doFilter(request, wrapper);
 
 			String contentType = null;
@@ -123,13 +117,10 @@ public class InjectTemplateFilter implements Filter {
 
 			writer.close();
 
-			boolean requestedURIIsTheTemplate = false;
+			boolean requestedURIIsTheTemplate = InjectUtils.isTemplate(request.getServletContext().getContextPath(),
+					uri);
 
-			requestedURIIsTheTemplate = InjectUtils.isTemplate(request
-					.getServletContext().getContextPath(), uri);
-
-			boolean contentTypeIsText = !wrapper.isBinary()
-					&& !contentType.equals("none");
+			boolean contentTypeIsText = !wrapper.isBinary() && !contentType.equals("none");
 
 			if (requestedURIIsTheTemplate || !contentTypeIsText) {
 				if (contentTypeIsText) {
@@ -149,83 +140,45 @@ public class InjectTemplateFilter implements Filter {
 				return;
 			}
 
-			String key = buildKey(httpRequest, template);
-
 			if (!templates.containsKey("/" + template.path)) {
-				throw new ServletException("Template [" + template.path
-						+ "] not founded");
+				throw new ServletException("Template [" + template.path + "] not founded");
 			}
 
-			boolean needRefresh = template.refreshInSeconds > 0
-					&& ((System.currentTimeMillis() - template.lastUpdate) / 1000) > template.refreshInSeconds;
-
-			boolean off = !template.cache.equals("SESSION")
-					&& !template.cache.equals("ON");
-
-			boolean replaceTemplate = off || !htmlContents.containsKey(key)
-					|| needRefresh;
-
-			if (replaceTemplate) {
-				if (needRefresh) {
-					template.lastUpdate = System.currentTimeMillis();
-				}
-
-				try {
-					loadContentTemplate(template, request.getServerName(),
-							request.getServletContext().getContextPath(),
-							request.getServerPort(), request.getProtocol()
-									.contains("HTTPS"), httpRequest,
-							httpResponse);
-				} catch (Exception e) {
-					throw new ServletException(e.getMessage(), e);
-				}
-			}
+			String contentTemplate = loadContentTemplate(template, request.getServerName(),
+					request.getServletContext().getContextPath(), request.getServerPort(),
+					request.getProtocol().contains("HTTPS"), httpRequest, httpResponse);
 
 			HTMLInfoBean templateHTML = templates.get("/" + template.path);
 
-			String contentTemplate = htmlContents.get(key).getContent();
 			IDocument docOut = HTMLParser.parse(out);
 
 			for (String selector : templateHTML.getSelectors()) {
-				IElements elements = docOut.select(selector);
-				if (elements.size() == 0) {
-					System.out.println("WARNING: Selector [" + selector
-							+ "] in template [" + templateHTML.getUri()
-							+ "] not founded in ["
-							+ httpRequest.getRequestURI() + "]");
-					continue;
-				}
-				if (elements.size() != 1) {
-					System.out
-							.println("WARNING: Selector get many elements. Choosed the first to URI: "
-									+ templateHTML.getUri());
-				}
-				IElement element = elements.get(0);
-				String innerHTML = element.html();
-
-				contentTemplate = contentTemplate.replace("<INJECT selector='"
-						+ selector + "'/>", innerHTML);
+				contentTemplate = replaceSelector(selector, docOut, templateHTML, httpRequest, contentTemplate);
 			}
 
 			response.getWriter().print(contentTemplate);
 		} catch (Exception e) {
-			throw e;
-		} finally {
-
+			throw new ServletException(e);
 		}
 	}
 
-	private String buildKey(HttpServletRequest httpRequest,
-			TemplateBean template) {
-
-		if (template.cache.equals("SESSION")) {
-			return template.path + "&injectid="
-					+ httpRequest.getSession().getId();
-		} else if (template.cache.equals("ON")) {
-			return template.path;
-		} else {
-			return "noCache";
+	private String replaceSelector(String selector, IDocument docOut, HTMLInfoBean templateHTML,
+			HttpServletRequest httpRequest, String contentTemplate) {
+		IElements elements = docOut.select(selector);
+		if (elements.size() == 0) {
+			System.out.println("WARNING: Selector [" + selector + "] in template [" + templateHTML.getUri()
+					+ "] not founded in [" + httpRequest.getRequestURI() + "]");
+			return contentTemplate;
 		}
+		if (elements.size() != 1) {
+			System.out
+					.println("WARNING: Selector get many elements. Choosed the first to URI: " + templateHTML.getUri());
+		}
+		IElement element = elements.get(0);
+		String innerHTML = element.html();
+
+		return contentTemplate.replace("<INJECT selector='" + selector + "'/>", innerHTML);
+
 	}
 
 	private TemplateBean getTemplatePathByURI(String uri) {
@@ -253,8 +206,7 @@ public class InjectTemplateFilter implements Filter {
 		return false;
 	}
 
-	private void loadTemplates(HttpServletRequest request)
-			throws ServletException {
+	private void loadTemplates(HttpServletRequest request) throws ServletException {
 
 		if (templateLodaded) {
 			return;
@@ -268,14 +220,12 @@ public class InjectTemplateFilter implements Filter {
 					template.path = template.path.substring(1);
 				}
 
-				boolean firstCharIsUnecessarySeparator = template.path
-						.startsWith("/") || template.path.startsWith("\\");
-				template.path = (firstCharIsUnecessarySeparator) ? template.path
-						.substring(1) : template.path;
+				boolean firstCharIsUnecessarySeparator = template.path.startsWith("/")
+						|| template.path.startsWith("\\");
+				template.path = (firstCharIsUnecessarySeparator) ? template.path.substring(1) : template.path;
 
-				loadHTMLInfo(template, request.getServerName(),
-						request.getServerPort(), request.getProtocol()
-								.contains("HTTPS"), request);
+				loadHTMLInfo(template, request.getServerName(), request.getServerPort(),
+						request.getProtocol().contains("HTTPS"), request);
 
 			}
 		} catch (Exception e) {
@@ -288,10 +238,8 @@ public class InjectTemplateFilter implements Filter {
 		templateLodaded = true;
 	}
 
-	private void loadContentTemplate(TemplateBean template, String domain,
-			String contextName, Integer port, boolean https,
-			HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws Exception {
+	private String loadContentTemplate(TemplateBean template, String domain, String contextName, Integer port,
+			boolean https, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws Exception {
 		HTMLInfoBean htmlInfo = templates.get("/" + template.path);
 
 		String sport = (port == null) ? "" : ":" + String.valueOf(port);
@@ -300,30 +248,26 @@ public class InjectTemplateFilter implements Filter {
 			contextName = "";
 		}
 
-		String url = htmlInfo.getProtocol() + "://" + domain + sport
-				+ contextName + "/" + template.path;
+		String url = htmlInfo.getProtocol() + "://" + domain + sport + contextName + "/" + template.path;
 
 		String content;
 		try {
 
 			ServletContext context = httpRequest.getServletContext();
 
-			String uri = (template.path.startsWith("/")) ? template.path : "/"
-					+ template.path;
+			String uri = (template.path.startsWith("/")) ? template.path : "/" + template.path;
 
 			RequestDispatcher dispatcher = context.getRequestDispatcher(uri);
 
 			StringWriter writer = new StringWriter();
 
-			BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(
-					httpResponse, writer);
+			BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpResponse, writer);
 
 			dispatcher.forward(httpRequest, responseWrapper);
 
 			int status = responseWrapper.getStatus();
 			if (status != 200) {
-				throw new Exception("Template  [" + url + "] not loaded - HTML status code "
-						+ status + " must be 200");
+				throw new Exception("Template  [" + url + "] not loaded - HTML status code " + status + " must be 200");
 			}
 
 			content = writer.getBuffer().toString();
@@ -337,37 +281,30 @@ public class InjectTemplateFilter implements Filter {
 			throw e;
 		}
 
-		Pattern pattern = Pattern.compile(
-				"<INJECT[ ]{1,}selector=[\"'](.*?)[\"']/>",
-				Pattern.CASE_INSENSITIVE + Pattern.DOTALL);
+		List<String> selectorsFixed = new ArrayList<>();
+
+		content = fixSelectors(content, selectorsFixed);
+
+		htmlInfo.setSelectors(selectorsFixed);
+		
+		return content;
+	}
+
+	private String fixSelectors(String content, List<String> selectors) {
 
 		Matcher matcher = pattern.matcher(content);
-
-		List<String> selectors = new ArrayList<String>();
 
 		while (matcher.find()) {
 			String tagInject = matcher.group(0);
 			String selector = matcher.group(1);
 			selectors.add(selector);
-			content = content.replace(tagInject, "<INJECT selector='"
-					+ selector + "'/>");
+			content = content.replace(tagInject, "<INJECT selector='" + selector + "'/>");
 		}
-
-		String key = buildKey(httpRequest, template);
-
-		HtmlContentBean contentBean = new HtmlContentBean();
-		contentBean.setContent(content);
-		contentBean.setLastAccess(System.currentTimeMillis());
-		htmlContents.remove(key);
-		htmlContents.put(key, contentBean);
-		htmlInfo.setSelectors(selectors);
+		return content;
 	}
 
-	 
-
-	private void loadHTMLInfo(TemplateBean template, String domain,
-			Integer port, boolean https, HttpServletRequest httpRequest)
-			throws Exception {
+	private void loadHTMLInfo(TemplateBean template, String domain, Integer port, boolean https,
+			HttpServletRequest httpRequest) throws Exception {
 		HTMLInfoBean htmlInfo = new HTMLInfoBean();
 		htmlInfo.setUri(template.path);
 		htmlInfo.setLastUpdate(System.currentTimeMillis());
