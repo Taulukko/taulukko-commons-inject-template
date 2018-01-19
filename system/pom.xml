@@ -11,7 +11,7 @@
 	<groupId>com.taulukko.commons</groupId>
 	<artifactId>taulukko-commons-inject-template</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.11.0</version>
+	<version>1.0.13.0</version>
 	<!-- -SNAPSHOT -->
 
 
@@ -78,17 +78,28 @@
 		<dependency>
 			<groupId>com.sun.faces</groupId>
 			<artifactId>jsf-impl</artifactId>
-			<version>2.2.10</version>
+			<version>2.2.16</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.sun.faces</groupId>
 			<artifactId>jsf-api</artifactId>
-			<version>2.1.13</version>
+			<version>2.2.16</version>
 			<scope>test</scope>
 		</dependency>
-
+		
+		<dependency>
+	      <groupId>javax.servlet</groupId>
+	      <artifactId>jstl</artifactId>
+	      <version>1.2</version>
+		</dependency>
+	
+	<dependency>
+	    <groupId>com.sun.faces</groupId>
+	    <artifactId>jsf-impl</artifactId>
+	    <version>2.2.14</version>
+	</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
@@ -135,51 +146,22 @@
 	<build>
 		<plugins>
 
-			<!-- To total integration with eclipse and groovy, add groovy support 
-				from distribuition https://github.com/groovy/groovy-eclipse/wiki -->
-			<!-- To neon http://dist.springsource.org/snapshot/GRECLIPSE/e4.6/ -->
-			<!-- To luna http://dist.springsource.org/release/GRECLIPSE/e4.4/ -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<compilerId>groovy-eclipse-compiler</compilerId>
-					<argLine>-Dfile.encoding=${encoding}</argLine>
-					<source>${jdk.version}</source>
-					<target>${jdk.version}</target>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.codehaus.groovy</groupId>
-						<artifactId>groovy-eclipse-compiler</artifactId>
-						<version>2.9.1-01</version>
-					</dependency>
-					<!-- for 2.8.0-01 and later you must have an explicit dependency on 
-						groovy-eclipse-batch -->
-					<dependency>
-						<groupId>org.codehaus.groovy</groupId>
-						<artifactId>groovy-eclipse-batch</artifactId>
-						<version>2.3.7-01</version>
-					</dependency>
-				</dependencies>
-
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.0</version>
-				<configuration>
 					<argLine>-Dfile.encoding=${encoding}</argLine>
 					<source>${jdk.version}</source>
 					<target>${jdk.version}</target>
 				</configuration>
 			</plugin>
+ 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
 				<version>2.4</version>
+				 
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
