@@ -43,7 +43,8 @@ public class InjectTemplateFilter implements Filter {
 
 	private static Pattern pattern = Pattern.compile("<INJECT[ ]{1,}selector=[\"'](.*?)[\"']/>",
 			Pattern.CASE_INSENSITIVE + Pattern.DOTALL);
-	
+ 
+
 	private static Map<String, String> contentTypes = null;
 	private static Map<String, HTMLInfoBean> templates = null;
 
@@ -264,7 +265,13 @@ public class InjectTemplateFilter implements Filter {
 			BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpResponse, writer);
 
 			dispatcher.forward(httpRequest, responseWrapper);
-
+ 
+			//no template file file have cache
+			responseWrapper.setHeader("Cache-Control", "max-age=0");
+			responseWrapper.setHeader("Pragma", "no-cache");
+			responseWrapper.setHeader("Expires", "0");
+ 
+			
 			int status = responseWrapper.getStatus();
 			if (status != 200) {
 				throw new Exception("Template  [" + url + "] not loaded - HTML status code " + status + " must be 200");
@@ -286,7 +293,7 @@ public class InjectTemplateFilter implements Filter {
 		content = fixSelectors(content, selectorsFixed);
 
 		htmlInfo.setSelectors(selectorsFixed);
-		
+
 		return content;
 	}
 
